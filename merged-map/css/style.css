@@ -1,0 +1,736 @@
+/* ==========================================================================
+   Ultimate Merged 3D Earth GIS Explorer (Mapbox GL JS v3 + TerraChat Mesh)
+   ========================================================================== */
+
+:root {
+  --bg-space: #060913;
+  --panel-bg: rgba(13, 20, 36, 0.85);
+  --panel-border: rgba(0, 240, 255, 0.2);
+  --panel-border-glow: rgba(0, 240, 255, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  --accent-cyan: #00f0ff;
+  --accent-blue: #38bdf8;
+  --accent-indigo: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+
+  --font-main: 'Outfit', 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --shadow-glow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-main);
+  background-color: var(--bg-space);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Background Cosmic Nebula Wallpaper */
+#stars-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background-color: #030712;
+  background-image: 
+    radial-gradient(circle at center, rgba(6, 9, 19, 0.1) 0%, rgba(3, 7, 18, 0.8) 100%),
+    radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0, 240, 255, 0.18) 0%, transparent 40%);
+}
+
+/* Fullscreen Map Canvas */
+#map {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* UI Overlay Layer */
+.ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pointer-auto {
+  pointer-events: auto;
+}
+
+/* Header Navigation Bar */
+.header-bar {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  right: 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-glow);
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(99, 102, 241, 0.3));
+  border: 1px solid var(--panel-border-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  background: linear-gradient(to right, #ffffff, var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-tagline {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Header Search Container */
+.search-container {
+  position: relative;
+  width: 360px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 38px 0 38px;
+  background: rgba(6, 10, 20, 0.85);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.search-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.search-clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: none;
+  font-size: 14px;
+}
+
+.search-results {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  max-height: 260px;
+  overflow-y: auto;
+  display: none;
+  z-index: 20;
+  box-shadow: var(--shadow-glow);
+}
+
+.search-result-item {
+  padding: 10px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-result-item:hover {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--accent-cyan);
+}
+
+/* Sidebar HUD Panel */
+.sidebar-panel {
+  position: absolute;
+  top: 92px;
+  left: 20px;
+  bottom: 40px;
+  width: 320px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-glow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-panel.collapsed {
+  transform: translateX(-350px);
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 104px;
+  left: 346px;
+  width: 34px;
+  height: 34px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(12px);
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.sidebar-panel.collapsed + .sidebar-toggle-btn {
+  left: 20px;
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--accent-cyan);
+  color: #000;
+  box-shadow: 0 0 12px var(--accent-cyan);
+}
+
+/* Sidebar Tabs */
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(6, 10, 20, 0.5);
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-tab.active {
+  color: var(--accent-cyan);
+  border-bottom: 2px solid var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+.tab-content::-webkit-scrollbar {
+  width: 4px;
+}
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3);
+  border-radius: 4px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Button Grids */
+.btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-grid-single {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn.active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(99, 102, 241, 0.25));
+  border-color: var(--accent-cyan);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.3);
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #0284c7, #4f46e5);
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.5);
+}
+
+/* Landmark Pills */
+.landmark-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill:hover {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
+}
+
+/* User Card Items */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(18, 28, 48, 0.65);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-card:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(24, 38, 68, 0.8);
+}
+
+.user-card-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar-wrap img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-cyan);
+}
+
+.user-card-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-card-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* 3D Billboard Markers with Ground Needle Pin */
+.custom-map-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content !important;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.marker-needle-tip {
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 6px solid var(--accent-cyan);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px var(--accent-cyan));
+}
+
+.marker-ground-point {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.marker-ground-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-cyan);
+  border: 1.5px solid #060913;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+.marker-ground-ring {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-cyan);
+  opacity: 0.6;
+}
+
+.marker-ground-pulse {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-cyan);
+  opacity: 0.8;
+  animation: radarPulse 2s infinite ease-out;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(0.25); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+.marker-pin-stem {
+  width: 2px;
+  height: 26px;
+  background: linear-gradient(to top, var(--accent-cyan), rgba(255, 255, 255, 0.4), transparent);
+  box-shadow: 0 0 6px var(--accent-cyan);
+}
+
+.marker-billboard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 6px;
+  background: rgba(10, 16, 28, 0.92);
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.7), 0 0 12px rgba(0, 240, 255, 0.3);
+  white-space: nowrap;
+}
+
+.marker-avatar-wrap img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-cyan);
+}
+
+.marker-name {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.marker-location {
+  font-size: 9px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Mapbox Popup Overrides */
+.mapboxgl-popup-content {
+  background: rgba(13, 20, 36, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--panel-border-glow) !important;
+  border-radius: var(--radius-md) !important;
+  color: #fff !important;
+  padding: 12px 14px !important;
+  box-shadow: var(--shadow-glow) !important;
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: rgba(13, 20, 36, 0.95) !important;
+}
+
+.popup-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent-cyan);
+  margin-bottom: 4px;
+}
+
+.popup-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Google Earth Nav Stack & Status Bar */
+.earth-nav-controls {
+  position: absolute;
+  bottom: 40px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+}
+
+.earth-control-group {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-glow);
+  overflow: hidden;
+}
+
+.earth-ctrl-btn {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.earth-ctrl-btn:last-child {
+  border-bottom: none;
+}
+
+.earth-ctrl-btn:hover {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--accent-cyan);
+}
+
+.earth-ctrl-btn.active {
+  background: rgba(0, 240, 255, 0.25);
+  color: var(--accent-cyan);
+}
+
+.earth-ctrl-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+}
+
+.earth-status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: rgba(3, 7, 18, 0.88);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  z-index: 25;
+  backdrop-filter: blur(12px);
+  user-select: none;
+}
+
+.earth-status-left, .earth-status-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.earth-status-value {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* Toast Notice */
+.toast-notice {
+  position: absolute;
+  top: 84px;
+  right: 24px;
+  z-index: 100;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--accent-cyan);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 12px;
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.toast-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .header-bar {
+    flex-direction: column;
+    height: auto;
+    padding: 12px;
+    gap: 10px;
+  }
+  .search-container {
+    width: 100%;
+  }
+  .sidebar-panel {
+    top: 130px;
+    width: calc(100vw - 40px);
+  }
+}

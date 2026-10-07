@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TerraChat 3D • Global Live Earth Mesh (World-Chat Map)</title>
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- MapLibre GL CSS v5.1.0 for 3D Globe -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.1.0/dist/maplibre-gl.css">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/app.css">
+</head>
+
+<body>
+  <!-- Background Cosmic Space Canvas -->
+  <div id="stars-bg"></div>
+
+  <!-- 3D Globe WebGL Container -->
+  <div id="globe-container"></div>
+
+  <!-- UI Overlay Layer -->
+  <div class="ui-layer">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="header-bar pointer-auto">
+      <div class="brand-section">
+        <div class="brand-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">TerraChat 3D Map</h1>
+          <p class="brand-tagline">Global OrbitSync • World-Chat Map</p>
+        </div>
+      </div>
+
+      <!-- Stats Indicators -->
+      <div class="header-stats">
+        <div class="stat-pill" title="Live Users on Earth">
+          <div class="stat-indicator live"></div>
+          <span>Active Orbiters: <strong class="stat-value">7</strong></span>
+        </div>
+        <div class="stat-pill" title="Live Video Connection Arcs">
+          <div class="stat-indicator arcs"></div>
+          <span>3D Arcs: <strong class="stat-value">3</strong></span>
+        </div>
+      </div>
+
+      <!-- Profile Pill -->
+      <div class="my-profile-pill" id="header-my-profile">
+        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AstroMe" alt="My Avatar">
+        <div class="user-info">
+          <span class="user-name">You (Orbiter)</span>
+          <span class="user-city">Kolkata, India</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Left Sidebar / HUD Drawer -->
+    <aside class="sidebar-panel pointer-auto" id="sidebar-panel">
+      <!-- Sidebar Navigation Tabs -->
+      <nav class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="tab-users">
+          <i class="fa-solid fa-users"></i> Active Orbiters
+        </button>
+        <button class="sidebar-tab" data-tab="tab-teleport">
+          <i class="fa-solid fa-location-arrow"></i> Teleport
+        </button>
+      </nav>
+
+      <!-- TAB 1: Active Users -->
+      <div class="tab-content active" id="tab-users">
+        <div class="section-title">Online Orbiters Across Earth</div>
+        <div id="user-list-container" class="user-list">
+          <!-- Populated dynamically via app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 2: Location & Teleport -->
+      <div class="tab-content" id="tab-teleport">
+        <div class="teleport-card">
+          <div class="section-title">Location & GPS Synchronizer</div>
+          <button id="btn-detect-gps" class="btn btn-secondary btn-sm" style="width: 100%;">
+            📡 Detect My Browser GPS
+          </button>
+          <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 6px 0;">
+          <div class="form-group">
+            <label class="form-label" for="select-teleport-city">Teleport to World City</label>
+            <select id="select-teleport-city" class="form-select">
+              <!-- Populated dynamically with global cities -->
+            </select>
+          </div>
+          <button id="btn-teleport" class="btn btn-primary btn-sm" style="width: 100%;">
+            🚀 Teleport on 3D Globe
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle-btn pointer-auto" id="sidebar-toggle-btn" title="Toggle Sidebar">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+
+    <!-- Floating Target User Focus Modal (when user clicks pin on globe) -->
+    <div class="target-focus-modal pointer-auto" id="target-focus-modal">
+      <div class="target-modal-profile">
+        <img id="target-modal-avatar" class="target-modal-avatar" src="" alt="User Avatar">
+        <div class="target-modal-details">
+          <h4 id="target-modal-name">User Name</h4>
+          <p id="target-modal-location">City • Coordinates</p>
+        </div>
+      </div>
+      <div class="target-modal-actions">
+        <button id="target-modal-close-btn" class="btn btn-secondary btn-sm btn-icon" title="Dismiss">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Google Earth Navigation Controls (Bottom-Right) -->
+    <div class="earth-nav-controls pointer-auto">
+      <div class="earth-control-group">
+        <button class="earth-ctrl-btn" id="earth-ctrl-compass" title="Orient North / Reset Bearing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-3d" title="Toggle 2D / 3D Perspective">
+          3D
+        </button>
+        <button class="earth-ctrl-btn active" id="earth-ctrl-spin" title="Toggle Earth Auto-Rotation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-layers" title="Switch Layer (Satellite Hybrid / Satellite / OSM)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-my-loc" title="Focus My Location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-zoomin" title="Zoom In (+)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-zoomout" title="Zoom Out (-)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Google Earth Bottom Status Bar -->
+    <footer class="earth-status-bar pointer-auto">
+      <div class="earth-status-left">
+        <span class="earth-status-item">
+          Layer: <span id="status-layer-mode" class="earth-status-value">Satellite 3D Hybrid</span>
+        </span>
+      </div>
+      <div class="earth-status-center">
+        <span class="earth-status-item">
+          Coordinates: <span id="status-coords" class="earth-status-value">22°34'49" N  88°27'42" E</span>
+        </span>
+        <span class="earth-status-item">
+          Camera: <span id="status-altitude" class="earth-status-value">12,450 km</span>
+        </span>
+        <span class="earth-status-item" style="color: var(--text-muted);">
+          Imagery: Esri & OpenStreetMap
+        </span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- CDN Dependencies -->
+  <!-- 1. MapLibre GL JS v5.1.0 -->
+  <script src="https://unpkg.com/maplibre-gl@5.1.0/dist/maplibre-gl.js"></script>
+  <!-- 2. Turf.js for Geodesic Great Circle 3D Arcs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+  <!-- Modular Scripts -->
+  <script src="js/globe-manager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

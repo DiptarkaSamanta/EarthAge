@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultimate 3D Earth GIS | Mapbox GL JS v3 + TerraChat Mesh</title>
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Mapbox GL JS v3 -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
+  <!-- Turf.js for Geodesic Great Circle 3D Arcs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <!-- Deep Space Cosmic Background Canvas -->
+  <div id="stars-bg"></div>
+
+  <!-- Fullscreen Map Container -->
+  <div id="map"></div>
+
+  <!-- Toast Notification Bar -->
+  <div id="toastNotice" class="toast-notice">
+    <i class="fa-solid fa-location-crosshairs" style="color: var(--accent-cyan)"></i>
+    <span id="toastMsg">Initializing 3D Earth...</span>
+  </div>
+
+  <!-- UI Overlay Layer -->
+  <div class="ui-layer">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="header-bar pointer-auto">
+      <div class="brand-section">
+        <div class="brand-icon-wrap">
+          <i class="fa-solid fa-globe"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">Ultimate 3D Earth GIS</h1>
+          <p class="brand-tagline">Mapbox GL JS v3 • TerraChat Mesh Fusion</p>
+        </div>
+      </div>
+
+      <!-- Live Search Bar -->
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search city, mountain, island..." autocomplete="off" />
+          <button id="searchClear" class="search-clear"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="searchResults" class="search-results"></div>
+      </div>
+    </header>
+
+    <!-- Left Collapsible Sidebar HUD Drawer -->
+    <aside class="sidebar-panel pointer-auto" id="sidebarPanel">
+      <!-- Tabs Header -->
+      <nav class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="tab-controls">
+          <i class="fa-solid fa-layer-group"></i> Engine
+        </button>
+        <button class="sidebar-tab" data-tab="tab-gps">
+          <i class="fa-solid fa-location-crosshairs"></i> GPS & Cities
+        </button>
+        <button class="sidebar-tab" data-tab="tab-orbiters">
+          <i class="fa-solid fa-users"></i> Orbiters
+        </button>
+      </nav>
+
+      <!-- TAB 1: MAP ENGINE & STYLES -->
+      <div class="tab-content active" id="tab-controls">
+        <!-- PROJECTION & VIEW -->
+        <div class="section-title"><i class="fa-solid fa-earth-americas"></i> Projection Mode</div>
+        <div class="btn-grid">
+          <button class="btn active" id="globeModeBtn"><i class="fa-solid fa-globe"></i> 3D Globe</button>
+          <button class="btn" id="flatModeBtn"><i class="fa-solid fa-map"></i> 2D Mercator</button>
+        </div>
+
+        <!-- MAP STYLES -->
+        <div class="section-title"><i class="fa-solid fa-layer-group"></i> Imagery Style</div>
+        <div class="btn-grid">
+          <button class="btn style-btn active" data-style="mapbox://styles/mapbox/satellite-streets-v12"><i class="fa-solid fa-satellite"></i> Satellite</button>
+          <button class="btn style-btn" data-style="mapbox://styles/mapbox/standard"><i class="fa-solid fa-map"></i> Standard 3D</button>
+          <button class="btn style-btn" data-style="mapbox://styles/mapbox/dark-v11"><i class="fa-solid fa-moon"></i> Dark</button>
+          <button class="btn style-btn" data-style="mapbox://styles/mapbox/outdoors-v12"><i class="fa-solid fa-mountain"></i> Outdoors</button>
+        </div>
+
+        <!-- 3D FEATURES -->
+        <div class="section-title"><i class="fa-solid fa-cubes"></i> 3D Elevation & Buildings</div>
+        <div class="btn-grid">
+          <button class="btn" id="terrainBtn"><i class="fa-solid fa-mountain-city"></i> 3D Terrain DEM</button>
+          <button class="btn" id="buildingsBtn"><i class="fa-solid fa-city"></i> 3D Buildings</button>
+        </div>
+
+        <!-- CAMERA ROTATION -->
+        <div class="section-title"><i class="fa-solid fa-video"></i> Motion</div>
+        <div class="btn-grid-single">
+          <button class="btn" id="rotateBtn"><i class="fa-solid fa-rotate"></i> Toggle Earth Auto-Rotation</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: GPS & LANDMARKS -->
+      <div class="tab-content" id="tab-gps">
+        <div class="section-title"><i class="fa-solid fa-location-crosshairs"></i> Browser Geolocation</div>
+        <div class="btn-grid-single">
+          <button class="btn btn-accent" id="myLocationBtn"><i class="fa-solid fa-crosshairs"></i> Fly to My Current Location</button>
+        </div>
+
+        <div class="section-title" style="margin-top: 14px;"><i class="fa-solid fa-location-dot"></i> Famous Destinations</div>
+        <div class="landmark-pills">
+          <div class="pill" data-lng="88.3639" data-lat="22.5726" data-zoom="11">📍 Kolkata</div>
+          <div class="pill" data-lng="139.6917" data-lat="35.6895" data-zoom="11">📍 Tokyo</div>
+          <div class="pill" data-lng="-74.006" data-lat="40.7128" data-zoom="11">📍 New York</div>
+          <div class="pill" data-lng="2.3522" data-lat="48.8566" data-zoom="12">📍 Paris</div>
+          <div class="pill" data-lng="86.9250" data-lat="27.9881" data-zoom="10">⛰️ Everest</div>
+          <div class="pill" data-lng="31.1342" data-lat="29.9792" data-zoom="13">🏜️ Pyramids</div>
+          <div class="pill" data-lng="151.2093" data-lat="-33.8688" data-zoom="11">🦘 Sydney</div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ACTIVE ORBITERS -->
+      <div class="tab-content" id="tab-orbiters">
+        <div class="section-title"><i class="fa-solid fa-users"></i> Live Orbiters & Connection Mesh</div>
+        <div id="sidebar-user-list" class="user-list">
+          <!-- Populated dynamically via app.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle-btn pointer-auto" id="sidebarToggleBtn" title="Toggle Sidebar">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+
+    <!-- Google Earth Navigation Controls Stack (Bottom-Right) -->
+    <div class="earth-nav-controls pointer-auto">
+      <div class="earth-control-group">
+        <button class="earth-ctrl-btn" id="earth-ctrl-compass" title="Orient North">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-3d" title="Toggle 2D / 3D Tilt Angle">
+          3D
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-spin" title="Toggle Earth Auto-Rotation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-my-loc" title="Locate My Position">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-zoomin" title="Zoom In (+)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button class="earth-ctrl-btn" id="earth-ctrl-zoomout" title="Zoom Out (-)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Google Earth Bottom Status Bar -->
+    <footer class="earth-status-bar pointer-auto">
+      <div class="earth-status-left">
+        <span class="earth-status-item">
+          Engine: <span class="earth-status-value">Mapbox GL JS v3</span>
+        </span>
+      </div>
+      <div class="earth-status-center">
+        <span class="earth-status-item">
+          Coordinates: <span id="status-coords" class="earth-status-value">22°34'49" N  88°27'42" E</span>
+        </span>
+        <span class="earth-status-item">
+          Camera: <span id="status-altitude" class="earth-status-value">12,450 km</span>
+        </span>
+        <span class="earth-status-item" style="color: var(--text-muted);">
+          Imagery: Mapbox & Maxar
+        </span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Modular Scripts -->
+  <script src="js/app.js"></script>
+</body>
+</html>
